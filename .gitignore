@@ -1,0 +1,10 @@
+# Local secrets — never commit the real API key
+JS/cc-license-config.js
+
+# Dependencies (JSPrintManager is vendored as JS/JSPrintManager9.js)
+node_modules/
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+*.log

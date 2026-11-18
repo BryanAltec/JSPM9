@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Layout</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="JS/JSPrintManager9.js"></script>
+<script src="JS/cc-license-config.js"></script>
+<script src="JS/cc-printer-list.js"></script>
+<script src="JS/cc-print.js"></script>
+<script src="JS/cc-usb.js"></script>
+<script src="JS/cc-tcp.js"></script>
+<script src="JS/cc-bt.js"></script>
+<script src="JS/cc-ipp.js"></script>
+<script src="JS/cc-js-status.js"></script>
+<script src="JS/cc-printers-info.js"></script>
+<script src="JS/cc-job-tracking.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg-page:      #0f1117;
+    --bg-card:      #181c27;
+    --bg-input:     #1e2333;
+    --border:       #2a3045;
+    --border-focus: #4f6ef7;
+    --accent:       #4f6ef7;
+    --accent-light: #6b87ff;
+    --text-primary: #e8eaf2;
+    --text-muted:   #7a85a3;
+    --text-hint:    #4a5268;
+    --canvas-grid:  #1e2333;
+    --radius-sm:    6px;
+    --radius-md:    10px;
+    --radius-lg:    14px;
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg-page);
+    color: var(--text-primary);
+    min-height: 100vh;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 3rem 1rem;
+  }
+
+  .page {
+    width: min(1500px, 100%);
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  /* ── Cards ── */
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+  }
+
+  .page-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .page-toolbar h1 {
+    font-size: 18px;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+  }
+
+  .page-toolbar p {
+    color: var(--text-muted);
+    font-size: 13.5px;
+    line-height: 1.6;
+    margin-top: 4px;
+  }
+
+  .toolbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .printer-info-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .printer-info-controls select {
+    width: min(260px, 100%);
+    flex: 0 1 260px;
+  }
+
+  .printer-info-controls .secondary-button {
+    min-width: 0;
+  }
+
+  .printer-info-result {
+    margin-top: 12px;
+    width: 100%;
+    max-height: 180px;
+    overflow: auto;
+    padding: 10px 12px;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text-muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  .printer-info-result:empty {
+    display: none;
+  }
+
+  .socket-status {
+    --socket-color: #7a85a3;
+    --socket-glow: rgba(122, 133, 163, 0.18);
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    min-height: 40px;
+    border-radius: 999px;
+    border: 1px solid rgba(72, 84, 123, 0.9);
+    background: linear-gradient(180deg, rgba(17, 22, 38, 0.96), rgba(11, 14, 24, 0.96));
+    color: var(--socket-color);
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.04),
+      0 0 0 1px rgba(0, 0, 0, 0.18),
+      0 0 18px var(--socket-glow);
+    white-space: nowrap;
+  }
+
+  .socket-status::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    background: currentColor;
+    box-shadow: 0 0 0 4px var(--socket-glow);
+    flex: 0 0 auto;
+    animation: blink 2s infinite;
+  }
+
+  @keyframes blink {
+    0% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.25;
+    }
+    100% {
+      opacity: 1;
+    }
+  }
+
+  .socket-status.is-connected {
+    --socket-color: #38d67a;
+    --socket-glow: rgba(56, 214, 122, 0.18);
+  }
+
+  .socket-status.is-closed {
+    --socket-color: #e04f5f;
+    --socket-glow: rgba(224, 79, 95, 0.18);
+  }
+
+  .socket-status.is-blocked {
+    --socket-color: #f7b543;
+    --socket-glow: rgba(247, 181, 67, 0.18);
+  }
+
+  .socket-status.is-connecting {
+    --socket-color: #79a7ff;
+    --socket-glow: rgba(121, 167, 255, 0.18);
+  }
+
+  .toolbar-copy {
+    min-width: 280px;
+    max-width: 680px;
+  }
+
+  .cards-grid {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 20px;
+    align-items: start;
+  }
+
+  .form-card {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    min-height: 100%;
+  }
+
+  .card-intro {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid rgba(122, 133, 163, 0.18);
+  }
+
+  .intro h2 {
+    font-size: 17px;
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: 10px;
+    letter-spacing: -0.01em;
+  }
+  .intro p {
+    font-size: 13.5px;
+    color: var(--text-muted);
+    line-height: 1.75;
+  }
+
+  .card-intro h2 {
+    font-size: 16px;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+  }
+
+  .card-intro p {
+    color: var(--text-muted);
+    font-size: 13px;
+    line-height: 1.7;
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-muted);
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+  }
+
+  select,
+  input[type="text"],
+  textarea {
+    width: 100%;
+    height: 38px;
+    padding: 0 12px;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text-primary);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13.5px;
+    outline: none;
+    transition: border-color 0.15s, background 0.15s;
+    appearance: none;
+    -webkit-appearance: none;
+  }
+
+  textarea {
+    min-height: 110px;
+    padding: 10px 12px;
+    resize: vertical;
+    line-height: 1.5;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%237a85a3' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 32px;
+    cursor: pointer;
+  }
+
+  select:focus,
+  input[type="text"]:focus,
+  textarea:focus {
+    border-color: var(--border-focus);
+    background: #222840;
+  }
+
+  select option {
+    background: #1e2333;
+    color: var(--text-primary);
+  }
+
+  input::placeholder { color: var(--text-hint); }
+
+  /* Button row */
+  .btn-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-top: 4px;
+  }
+
+  .btn-row input[type="text"] {
+    flex: 0 0 96px;
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+  }
+
+  button {
+    flex: 1;
+    height: 38px;
+    padding: 0 16px;
+    background: var(--accent);
+    border: none;
+    border-radius: var(--radius-sm);
+    color: #fff;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13.5px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    letter-spacing: 0.01em;
+  }
+
+  button:hover  { background: var(--accent-light); }
+  button:active { transform: scale(0.97); }
+
+  button svg {
+    width: 15px;
+    height: 15px;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .secondary-button {
+    flex: 0 0 auto;
+    min-width: 120px;
+    background: #232943;
+    border: 1px solid var(--border);
+  }
+
+  .secondary-button:hover {
+    background: #2a3150;
+  }
+
+  .canvas-panel {
+    display: block;
+  }
+
+  .canvas-panel.is-hidden {
+    display: none;
+  }
+
+  .canvas-card {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-height: 460px;
+  }
+
+  .canvas-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-muted);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .canvas-header svg {
+    width: 15px; height: 15px;
+    stroke: var(--text-hint);
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  canvas {
+    flex: 1;
+    width: 100%;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+    background: #12151e;
+    display: block;
+  }
+
+  @media (max-width: 1280px) {
+    .cards-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 760px) {
+    body {
+      padding: 1rem;
+    }
+
+    .cards-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .toolbar-copy {
+      min-width: 0;
+      max-width: none;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <div class="card page-toolbar">
+    <div class="toolbar-copy">
+      <h1>Printer layout</h1>
+      <p>De form cards staan naast elkaar in een uitbreidbare grid. De canvas wordt pas zichtbaar wanneer je erop klikt.</p>
+    </div>
+    <div class="toolbar-actions">
+      <div id="socketStatus" class="socket-status is-closed" aria-live="polite">closed</div>
+      <!-- NEW (9.0.3): clientAppVersion label — filled from JSPM.JSPrintManager.clientAppVersion -->
+      <div id="clientAppVersion" class="socket-status is-closed" title="JSPrintManager Client App version">Client v?</div>
+      <div class="printer-info-controls">
+        <select id="printerInfoName">
+          <option value="">Selecteer printer...</option>
+        </select>
+        <!-- NEW (9.0.3): Basic + spooler_only (fast picker-style query) -->
+        <button type="button" class="secondary-button" onclick="fetchPrinterInfoBasic();">Basic (spooler)</button>
+        <!-- Full Basic without spooler_only (may talk to driver) -->
+        <button type="button" class="secondary-button" onclick="fetchPrinterInfoBasicFull();">Basic (full)</button>
+        <!-- Extended timing test — Windows no longer uses WMI in 9.0.3 -->
+        <button type="button" class="secondary-button" onclick="fetchPrinterInfoExtended();">Extended (timed)</button>
+        <!-- Extended for every installed printer — timed total -->
+        <button type="button" class="secondary-button" onclick="fetchPrinterInfoExtendedAll();">Extended all (timed)</button>
+        <!-- NEW (9.0.3): spooler_only list of all printers -->
+        <button type="button" class="secondary-button" onclick="fetchPrinterInfoSpoolerPicker();">Spooler picker</button>
+        <!-- NEW (9.0.3): job outcome / onError tracking test -->
+        <button type="button" class="secondary-button" onclick="testJobTracking();">Job track test</button>
+        <!-- NEW (9.0.3): SslModeMismatch explanation / probe (this page uses wss://) -->
+        <button type="button" class="secondary-button" onclick="testSslModeMismatch();">SSL mismatch test</button>
+      </div>
+      <button type="button" class="secondary-button" id="canvasToggleBtn" onclick="toggleCanvas();">Toon canvas</button>
+    </div>
+    <pre id="printerInfoResult" class="printer-info-result" aria-live="polite"></pre>
+  </div>
+
+  <div class="cards-grid">
+    <div class="card form-card">
+      <div class="card-intro">
+        <h2>Label print</h2>
+        <p>Selecteer een printer en vul de labelgegevens in. Deze kaart blijft de basis voor de huidige printflow.</p>
+      </div>
+      <div class="printerSelection">
+        <label>Printers</label>
+        <select id="installedPrinterName">
+          <option value="">Selecteer printer...</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Naam</label>
+        <input type="text" placeholder="Vul naam in">
+      </div>
+
+      <div class="field">
+        <label>E-mailadres</label>
+        <input type="text" placeholder="naam@domein.nl">
+      </div>
+
+      <div class="field">
+        <label>Omschrijving</label>
+        <input type="text" placeholder="Korte omschrijving">
+      </div>
+
+      <div class="btn-row">
+        <input type="text" placeholder="Waarde">
+        <button onclick="prepLabels()">
+          Bevestigen
+          <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="card form-card">
+      <div class="card-intro">
+        <h2>USB bidi</h2>
+        <p>Gebruik deze kaart voor directe communicatie met de printer via USB. De raw log blijft beschikbaar.</p>
+      </div>
+      <div class="field">
+        <label>
+            USB Device Path
+        </label>
+        <select id="usbDevice"></select>
+      </div>
+
+      <div class="btn-row">
+        <button type="button" onclick="openUsbComm();">
+            Open
+        </button>
+          
+        <button type="button" onclick="closeUsbComm();">
+            Close
+        </button>
+      </div>
+
+      <div class="btn-row">
+        <!--<input id="usbCommand" type="text" placeholder="CONFIG">-->
+        <textarea id="usbCommand" placeholder="Voer hier de te verzenden gegevens in" style="font-family:'DM Mono', monospace;font-size:13px;"></textarea>
+        <button onclick="sendUsbData()">
+          Bevestigen
+          <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </button>
+      </div>
+
+      <div class="field">
+        <label>Response (Schoon)</label>
+        <textarea id="txtDataReceived" type="text" placeholder="Printer response"></textarea>
+      </div>
+
+      <div class="field">
+        <label>Raw Log</label>
+        <textarea id="txtDataRaw" type="text" placeholder="Raw data in real-time" style="font-size:10px;"></textarea>
+      </div>
+
+      <div class="field">
+        <label>Raw Hex</label>
+        <textarea id="txtDataHex" placeholder="Hex bytes in real-time" style="font-size:10px;"></textarea>
+      </div>
+    </div>
+
+    <div class="card form-card">
+      <div class="card-intro">
+        <h2>TCP/IP bidi</h2>
+        <p>Gebruik deze kaart voor directe communicatie met een printer over het netwerk.</p>
+      </div>
+      <div class="field">
+        <label for="tcpAddress">IP Adres</label>
+        <input type="text" id="tcpAddress" placeholder="192.168.1.50">
+      </div>
+      <div class="field">
+        <label for="tcpPort">Poort</label>
+        <input type="text" id="tcpPort" placeholder="9100">
+      </div>
+
+      <div class="btn-row">
+        <button type="button" onclick="openTcpComm();">
+            Open
+        </button>
+        <button type="button" onclick="closeTcpComm();">
+            Close
+        </button>
+      </div>
+
+      <div class="btn-row">
+        <input id="tcpCommand" type="text" placeholder="CONFIG">
+        <button onclick="sendTcpData()">
+          Bevestigen
+          <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </button>
+      </div>
+
+      <div class="field">
+        <label for="txtTcpDataReceived">Response (Schoon)</label>
+        <textarea id="txtTcpDataReceived" placeholder="Printer response"></textarea>
+      </div>
+
+      <div class="field">
+        <label for="txtTcpDataRaw">Raw Log</label>
+        <textarea id="txtTcpDataRaw" placeholder="Raw data in real-time" style="font-size:10px;"></textarea>
+      </div>
+
+      <div class="field">
+        <label for="txtTcpDataHex">Raw Hex</label>
+        <textarea id="txtTcpDataHex" placeholder="Hex bytes in real-time" style="font-size:10px;"></textarea>
+      </div>
+    </div>
+
+    <div class="card form-card">
+      <div class="card-intro">
+        <h2>Bluetooth bidi</h2>
+        <p>Reserveer deze plek voor een vierde blok zodra je die nodig hebt.</p>
+      </div>
+      <div class="field">
+        <label for="btAddress">Address</label>
+        <input type="text" id="btAddress" placeholder="Nieuwe kaart">
+      </div>
+      <div class="field">
+        <label for="btChannel">Channel</label>
+        <input type="text" id="btChannel" placeholder="SPP channel, meestal 1">
+      </div>
+      <div class="btn-row">
+        <button type="button" onclick="openBtComm();">
+            Open
+        </button>
+        <button type="button" onclick="closeBtComm();">
+            Close
+        </button>
+      </div>
+      <div class="btn-row">
+        <input id="btCommand" type="text" placeholder="CONFIG">
+        <button onclick="sendBtData()">
+          Bevestigen
+          <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </button>
+      </div>
+
+      <div class="field">
+        <label for="txtBtDataReceived">Response (Schoon)</label>
+        <textarea id="txtBtDataReceived" placeholder="Printer response"></textarea>
+      </div>
+
+      <div class="field">
+        <label for="txtBtDataRaw">Raw Log</label>
+        <textarea id="txtBtDataRaw" placeholder="Raw data in real-time" style="font-size:10px;"></textarea>
+      </div>
+
+      <div class="field">
+        <label for="txtBtDataHex">Raw Hex</label>
+        <textarea id="txtBtDataHex" placeholder="Hex bytes in real-time" style="font-size:10px;"></textarea>
+      </div>
+    </div>
+
+    <div class="card form-card">
+      <div class="card-intro">
+        <h2>IPP test</h2>
+        <p>Gebruik deze kaart om IPP-berichten te testen zoals printer attributes, jobs en printjobs.</p>
+      </div>
+
+      <div class="field">
+        <label for="ippDeviceUri">IPP Device URI</label>
+        <input type="text" id="ippDeviceUri" placeholder="ipp://10.0.0.1:631" value="ipp://10.0.0.1:631">
+      </div>
+
+      <div class="field">
+        <label for="ippCommand">Command</label>
+        <textarea id="ippCommand" placeholder="CONFIG\nSTATUS"></textarea>
+      </div>
+
+      <div class="field">
+        <label for="ippFile">Or upload file</label>
+        <input type="file" id="ippFile">
+      </div>
+
+      <div class="field">
+        <label for="ippFlash">Flash parameter</label>
+        <input type="text" id="ippFlash" placeholder="F" value="F">
+      </div>
+
+      <div class="btn-row">
+        <button type="button" onclick="sendIppData();">Send command</button>
+        <button type="button" onclick="sendIppFile();">Send file</button>
+      </div>
+
+      <div class="field">
+        <label for="txtIppDataReceived">Response</label>
+        <textarea id="txtIppDataReceived" placeholder="IPP response" style="font-family:'DM Mono', monospace;font-size:11px;"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <div id="canvasPanel" class="canvas-panel is-hidden">
+    <div class="card canvas-card">
+      <div class="canvas-header">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+        Canvas gebied
+      </div>
+      <canvas id="c"></canvas>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  var _usbComm = null;
+  const canvas = document.getElementById('c');
+  const canvasPanel = document.getElementById('canvasPanel');
+  const canvasToggleBtn = document.getElementById('canvasToggleBtn');
+  const ctx = canvas.getContext('2d');
+
+  function resize() {
+    if (canvasPanel.classList.contains('is-hidden')) {
+      return;
+    }
+    canvas.width  = canvas.offsetWidth;
+    canvas.height = canvas.offsetHeight;
+    draw();
+  }
+
+  function draw() {
+    const w = canvas.width, h = canvas.height;
+    ctx.clearRect(0, 0, w, h);
+
+    ctx.strokeStyle = '#1e2333';
+    ctx.lineWidth = 1;
+    const step = 36;
+    for (let x = 0; x < w; x += step) {
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
+    }
+    for (let y = 0; y < h; y += step) {
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+    }
+
+    ctx.strokeStyle = '#2a3045';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([5, 5]);
+    ctx.strokeRect(24, 24, w - 48, h - 48);
+    ctx.setLineDash([]);
+
+    ctx.fillStyle = '#4a5268';
+    ctx.font = '13px DM Sans, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('Canvas gebied — teken of render hier', w / 2, h / 2);
+  }
+
+  setTimeout(resize, 50);
+  window.addEventListener('resize', resize);
+
+  function toggleCanvas() {
+    canvasPanel.classList.toggle('is-hidden');
+    canvasToggleBtn.textContent = canvasPanel.classList.contains('is-hidden') ? 'Toon canvas' : 'Verberg canvas';
+
+    if (!canvasPanel.classList.contains('is-hidden')) {
+      setTimeout(resize, 50);
+    }
+  }
+  function prepLabels() {
+      var printData = $('#commands').val();
+      var fileArr = ['./labels/armortag.txt', '../labels/armortag - kopie.txt'];
+      console.log(printData);
+      printLabelTemplate(printData, fileArr);
+      /*$.ajax({
+        url: templateUrl,
+        method: "GET",
+        xhrFields: { responseType: "arraybuffer" },
+        success: function (arrayBuffer) {
+          let text = new TextDecoder("utf-8").decode(new Uint8Array(arrayBuffer));
+
+          // Optional: fallback to UTF-8 if you prefer
+          if (text.includes("�")) {
+            text = new TextDecoder("utf-8", { fatal: false }).decode(new Uint8Array(arrayBuffer));
+          }
+
+          printData = text;
+
+          var QTYData = '1';
+          printData = printData.replaceAll('_QTY$_', QTYData);
+          $('#commands').val(printData);
+
+          var fileArr = [];
+
+          // printLabelTemplate is expected from cc-print.js
+          printLabelTemplate(printData, fileArr);
+        },
+        error: function (xhr, status, err) {
+          console.error("Failed to load file:", status, err);
+        }
+      });*/
+    }
+
+</script>
+<textarea id="commands" style="display:none;">
+SIZE 81 mm,55 mm
+GAP 5.325 mm,0 mm
+REFERENCE 0,0
+SPEED 2.0
+DENSITY 10
+SET RIBBON ON
+SET PEEL OFF
+SET CUTTER OFF
+SET PARTIAL_CUTTER OFF
+SET TEAR ON
+SET REWIND OFF
+DIRECTION 0,0
+REM SHIFT -6,-4
+OFFSET 0 mm
+CLS
+CODEPAGE UTF-8
+
+BAR 122,13,4,624
+BAR 126,324,177,4
+BAR 301,13,4,624
+BAR 256,13,4,624
+BAR 167,13,4,624
+BAR 212,13,4,312
+BAR 167,144,47,4
+
+TEXT 219,322,"ROMAN.TTF",270,8,8,"Length:"
+TEXT 264,322,"ROMAN.TTF",270,8,8,"Date:"
+TEXT 69,517,"ROMAN.TTF",270,7,8,"ID:"
+TEXT 131,629,"ROMAN.TTF",270,8,8,"90°"
+TEXT 131,537,"ROMAN.TTF",270,8,8,"<45°"
+TEXT 131,455,"ROMAN.TTF",270,8,8,"45°-60°"
+TEXT 174,322,"ROMAN.TTF",270,8,8,"Grade"
+TEXT 129,322,"ROMAN.TTF",270,8,8,"Legs"
+
+TEXT 270,532,"ROMAN.TTF",270,6,6,"_WLL45$_"
+TEXT 270,430,"ROMAN.TTF",270,6,6,"_WLL60$_"
+TEXT 219,210,"ROMAN.TTF",270,8,8,"_LEN$_"
+TEXT 264,239,"ROMAN.TTF",270,8,8,"_DATE$_"
+TEXT 42,475,"ROMAN.TTF",270,18,18,"_ID$_"
+TEXT 129,246,"ROMAN.TTF",270,8,8,"_LEGS$_"
+TEXT 174,141,"ROMAN.TTF",270,8,8,"_LEGDIA$_"
+TEXT 174,229,"ROMAN.TTF",270,8,8,"_CHAIN$_"
+TEXT 270,634,"ROMAN.TTF",270,6,6,"_WLL90$_"
+TEXT 319,567,"ROMAN.TTF",270,6,6,"_MAN$_"
+PRINT 1,1
+
+</textarea>
+</body>
+</html>
